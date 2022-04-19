@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import LoginUser
 from django.contrib.auth.hashers import make_password, check_password
+from .serializer import LoginUserSerializer
 
 # if user_id 가 특수문자인지.. 숫자인지.. 한글인지.. 이런것들을 전부 처리해줘야함.
 
@@ -27,19 +28,11 @@ class AppLogin(APIView):
 
 class RegistUser(APIView):
     def post(self, request):
-        user_id = request.data.get('user_id', "")
-        user_pw = request.data.get('user_pw', "")
-        birth_day = request.data.get('birth_day', None)
-        gender = request.data.get('gender', "male")
-        email = request.data.get('email', "")
-        name = request.data.get('name', "")
-        age = request.data.get('age', 20)
-        user_pw_crypted = make_password(user_pw)
+        serializer = LoginUserSerializer(request.data)
 
-
-        if LoginUser.objects.filter(user_id=user_id).exists():
+        if LoginUser.objects.filter(user_id=serializer.data['user_id']).exists():
             # DB에 있는 값 출력할 때 어떻게 나오는지 보려고 user 객체에 담음
-            user = LoginUser.objects.filter(user_id=user_id).first()
+            user = LoginUser.objects.filter(user_id=serializer.data['user_id']).first()
             data = dict(
                 msg="이미 존재하는 아이디입니다.",
                 user_id = user.user_id,
@@ -47,17 +40,7 @@ class RegistUser(APIView):
             )
             return Response(data)
 
-        LoginUser.objects.create(user_id=user_id, user_pw=user_pw_crypted, birth_day=birth_day,
-                                 gender=gender, email=email, name=name, age=age)
+        user = serializer.create(request.data)
 
-        data = dict(
-            user_id=user_id,
-            user_pw=user_pw_crypted,
-            birth_day=birth_day,
-            gender=gender,
-            email=email,
-            name=name,
-            age=age
-        )
 
-        return Response(data=data)
+        return Response(data=LoginUserSerializer(user).data)
