@@ -40,6 +40,8 @@ class RegistUser(APIView):
             )
             return Response(data)
 
+
+
         user = serializer.create(request.data)
 
 
